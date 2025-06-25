@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Test WebSocket</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>WebSocket Test</h1>
+  <button id="enviar">Enviar mensaje</button>
+  <pre id="respuesta"></pre>
+
+    <input type="text" id="ingresoTextoInput">
+
+  <div id="contenedorRespuestas">
+
+
+  </div>
+
+  <script>
+    const usuario = "Eduardo";
+    const socket = io('https://fg54v9hj-3000.use2.devtunnels.ms/'); /// Conexion de prueba.
+
+    document.getElementById('enviar').addEventListener('click', () => {
+        let datos = document.getElementById('ingresoTextoInput').value;
+    //   socket.emit('mensajeCliente', { nombre: 'Vamos a drogarnos' });
+        socket.emit(`Usuario: ${usuario}`, {mensaje: `${datos}`})
+    });
+
+    socket.on('mensajeServidor', (data) => {
+        let contenedor = document.getElementById('contenedorRespuestas');
+
+        const na = document.createElement('div');
+        na.innerHTML = `            
+            <p><strong>${data.mensaje}</strong> \n(${data.timestamp}</p>
+
+        `;
+        contenedor.appendChild(na);
+    //   document.getElementById('respuesta').textContent =
+    //     `Servidor dice: ${data.mensaje}\n(${data.timestamp})`;
+    });
+  </script>
+</body>
+</html>

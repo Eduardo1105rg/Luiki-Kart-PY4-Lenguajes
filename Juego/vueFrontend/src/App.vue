@@ -499,12 +499,12 @@ function emitirInicioDeJuego() {
 //Para lo que seria la parte de moverse.
 function mover(direccion) {
 
-  console.log("Datos del movimeinto: ", direccion, "   --  ", estadoPartida.value);
+  console.log("Datos del movimeinto: ", "   --  ", estadoPartida.value);
 
   if ( estadoPartida.value != 'jugando') {
     return;
   }
-  const actual = posicionesCarros.value.find(p => p.nombre === nombreJugador.value); // Bryan ya guardo las pos.
+  const actual = posicionesCarros.value.find(p => p.idJugador === socket.id); // Bryan ya guardo las pos.
   if (!actual) return;
 
   let nuevaFila = actual.fila;
@@ -513,24 +513,30 @@ function mover(direccion) {
   // Procesar la entrada.
   switch (direccion) {
     case 'arriba': 
-      nuevaColumna--; 
-      break;
-    case 'abajo': 
-      nuevaColumna++; 
-      break;
-    case 'izquierda': 
       nuevaFila--; 
       break;
-    case 'derecha': 
+    case 'abajo': 
       nuevaFila++; 
+      break;
+    case 'izquierda': 
+      nuevaColumna--; 
+      break;
+    case 'derecha': 
+      nuevaColumna++; 
       break;
   }
 
   // Verificar que no se mueva a los limites del mapa.
-  if ( nuevaFila < 0 || nuevaFila >= mapaContenido.value.length || nuevaColumna < 0 || nuevaColumna >= mapaContenido.value[0].length) return;
+  if ( nuevaFila < 0 || nuevaFila >= mapaContenido.value.length || nuevaColumna < 0 || nuevaColumna >= mapaContenido.value[0].length) {
+    console.log("Datos del movimeinto: Erro 1");
+    return;
+  }
 
   // Revisar que el espacio al que se mueva sea valido.
-  if (mapaContenido.value[nuevaFila][nuevaColumna] === '#') return;
+  if (mapaContenido.value[nuevaFila][nuevaColumna] === '#') {
+    console.log("Datos del movimeinto: Erro 12");
+    return;
+  }
 
   // Comunicarse con el servidor.
   socket.emit('realizarMovimiento', {
@@ -543,8 +549,12 @@ function mover(direccion) {
 
 // Que los demas usuarios recibar la asctulizacion.
 socket.on('actualizarEstadoJuego', ({ jugadorId, nuevaPosicion }) => {
-  const index = posicionesCarros.value.findIndex(p => p.idSocket === jugadorId);
-  if (index !== -1) {
+
+  console.log("Datos de la respuesta: ",jugadorId, posicionesCarros.value )
+  const index = posicionesCarros.value.findIndex(p => p.idJugador === jugadorId);
+
+  console.log("Index encontrado: ", index);
+  if (index != -1) {
     posicionesCarros.value[index].fila = nuevaPosicion.fila;
     posicionesCarros.value[index].columna = nuevaPosicion.columna;
   }

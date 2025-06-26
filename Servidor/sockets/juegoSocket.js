@@ -64,6 +64,7 @@ module.exports = function(io) {
             const mapa = leerCSV(pista);
             const posicionInicial = buscarPosicionE(mapa);
             const posicionesIniciales = [{
+                idJugador: socket.id,
                 nombre: creador,           
                 fila: posicionInicial.fila,
                 columna: posicionInicial.columna
@@ -141,20 +142,21 @@ module.exports = function(io) {
             const posicionInicial = buscarPosicionE(leerCSV(partida.pista)); 
 
             const nuevaPosicion = {
-            fila: posicionInicial.fila,
-            columna: posicionInicial.columna + indiceJugador
+                fila: posicionInicial.fila,
+                columna: posicionInicial.columna + indiceJugador
             };
 
             partida.jugadores.push({ 
-            idSocket: socket.id, 
-            nickname: nombreUsuario,
-            posicion: nuevaPosicion
+                idSocket: socket.id, 
+                nickname: nombreUsuario,
+                posicion: nuevaPosicion
             });
 
             partida.posicionesIniciales = partida.jugadores.map(j => ({
-            nombre: j.nombre || j.nickname,  
-            fila: j.posicion.fila,
-            columna: j.posicion.columna
+                idJugador : j.idSocket,
+                nombre: j.nombre || j.nickname,  
+                fila: j.posicion.fila,
+                columna: j.posicion.columna
             }));
 
             // Registrar el jugador en la partidad

@@ -21,7 +21,7 @@ const cantidadJugadores = ref(null);
 const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionado
 const posicionesCarros = ref([]);
 const datosPartida = ref(null); // Este seria para el registro de los datos a la hora de crear una partidad.
-
+const esCreadorPartida = ref(false);
 
 async function obtenerMapa() {
   try {
@@ -275,6 +275,11 @@ function manejarRegistro(datos) {
   return;
 }
 
+function getCarroEmojiPorIndice(index) {
+  const emojis = ['🚗', '🚓', '🚙', '🛻', '🚕'];
+  return emojis[index] || '🚗';
+}
+
 
 async function ingresarPartida() {
   
@@ -338,8 +343,9 @@ function crearPartida() {
 socket.on('partidaGenerada', (data) => {
   console.log('Partida generada:', data);
   console.log('Posiciones iniciales recibidas:', data.posicionesIniciales);
+  esCreadorPartida.value = true;
+  posicionesCarros.value = data.posicionesIniciales || [];
 
-  posicionesCarros.value = data.posicionesIniciales || [];  
   Swal.fire('Partida generada', `ID: ${data.id}`, 'success');
 });
 
@@ -360,19 +366,23 @@ socket.on('juegoCancelado', ({ motivo }) => {
 });
 
 
-// Resultado de unirse a una sala.
 socket.on('jugadorNuevo', (datos) => {
   console.log('Nuevo jugador en la sala:', datos);
 
+  mapaSeleccionado.value = datos.mapaSeleccionado;
+  mapaContenido.value = datos.contenidoMapa;
+  posicionesCarros.value = datos.posicionesIniciales || [];
+  crearPartidaActivo.value = true;
+  mostrarFormulario.value = false;  
+  esCreadorPartida.value = false;
   Swal.fire({
     icon: 'info',
     title: 'Te uniste a la partida',
     text: `Ingresando a la sala de espera hasta que se inicie la partida...`
   });
-
-  // Aqui se podria hacer algo mas para mostrar la sala de espera. 
-  // Tambien podriamos mostrar el mapa pero no dejar que se muevan hasta que el estado de sea igual a Iniciado
 });
+
+
 
 // Escuchar si hay un error a la hora de unirse a la sala.
 socket.on('errorSala', ({ mensaje }) => {
@@ -429,18 +439,32 @@ socket.on('salaListaParaIniciar', ({ sala }) => {
               <td
                 v-for="(celda, j) in fila"
                 :key="j"
-                :class="{
-                  muro: celda === '#',
-                  carro: posicionesCarros.some(p => p.fila === i && p.columna === j)
-                }"
+                :class="{ muro: celda === '#' }"
+                style="position: relative; width: 30px; height: 30px; padding: 0;"
               >
-                <span v-if="posicionesCarros.some(p => p.fila === i && p.columna === j)">
-                  🚗
-                </span>
+                <template v-if="posicionesCarros.some(p => p.fila === i && p.columna === j)">
+                  <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
+                    <span 
+                      v-for="(p, index) in posicionesCarros.filter(p => p.fila === i && p.columna === j)" 
+                      :key="index"
+                      :style="{
+                        position: 'absolute',
+                        left: `${index * 8}px`,
+                        zIndex: index,
+                        fontSize: '20px'
+                      }"
+                    >
+                      {{ getCarroEmojiPorIndice(index) }}
+                    </span>
+                  </div>
+                </template>
                 <span v-else-if="celda !== '#'">
                   {{ celda }}
                 </span>
               </td>
+
+
+
 
             </tr>
           </tbody>
@@ -484,74 +508,147 @@ socket.on('salaListaParaIniciar', ({ sala }) => {
 
 <!-- Estilos de la aplicacion.. -->
 <style scoped>
-  .contenedor {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-top: 4rem;
-    font-family: 'Segoe UI', sans-serif;
-  }
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 4rem;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  min-height: 100vh;
+}
 
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: #2c3e50;
+  text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+}
+
+.botones {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 300px;
+  margin-bottom: 2rem;
+}
+
+.boton {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 12px;
+  background-color: #42b983;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  font-weight: 600;
+}
+
+.boton:hover {
+  background-color: #36966f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.boton:active {
+  transform: translateY(0);
+}
+
+/* Estilos para el tablero/mapa */
+.tablero-contenedor {
+  margin: 2rem 0;
+  overflow: auto;
+  max-width: 100%;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 0 auto;
+  box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+th, td {
+  border: 1px solid #e0e0e0;
+  text-align: center;
+  user-select: none;
+  position: relative;
+  width: 35px;
+  height: 35px;
+  padding: 0;
+  background-color: #f9f9f9;
+}
+
+th {
+  background-color: #42b983;
+  color: white;
+  padding: 10px;
+  font-weight: 500;
+}
+
+/* Estilo para muros/paredes */
+.muro {
+  background-color: #37368e;
+  box-shadow: inset 0 0 5px rgba(0,0,0,0.3);
+}
+
+/* Estilo para pista/camino */
+.camino {
+  background-color: #f5f5f5;
+}
+
+/* Contenedor de carros en una celda */
+.carro-contenedor {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  padding-left: 3px;
+}
+
+/* Estilos para el formulario/modal */
+.formulario-partida {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  width: 90%;
+  max-width: 500px;
+  margin: 2rem auto;
+}
+
+/* Estilos responsivos */
+@media (max-width: 600px) {
+  .contenedor {
+    margin-top: 2rem;
+  }
+  
   h1 {
     font-size: 2rem;
-    margin-bottom: 2rem;
   }
-
+  
   .botones {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    width: 90%;
   }
-
-  .boton {
-    padding: 0.8rem 2rem;
-    font-size: 1.1rem;
-    border: none;
-    border-radius: 8px;
-    background-color: #42b983;
-    color: white;
-    cursor: pointer;
-    transition: background-color 0.3s;
-  }
-
-  .boton:hover {
-    background-color: #36966f;
-  }
-
+  
   table {
-    border-collapse: collapse;
-    width: 300px;
-    margin-bottom: 1rem;
+    zoom: 0.8;
   }
+}
 
-  th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
-    text-align: center;
-    user-select: none;
-  }
+/* Animaciones */
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
-  th {
-    background-color: #42b983;
-    color: white;
-  }
-
-  .muro {
-    background-color: #37368e; /* color del muro awiwiw */
-    width: 20px;
-    height: 20px;
-  }
-  .carro {
-    background-color: red;
-    width: 20px;
-    height: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: bold;
-  }
-
+.tablero-contenedor {
+  animation: aparecer 0.5s ease-out;
+}
 </style>
-
 

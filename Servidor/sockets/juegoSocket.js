@@ -63,9 +63,14 @@ module.exports = function(io) {
             // Obtener el mapa.
             const mapa = leerCSV(pista);
             const posicionInicial = buscarPosicionE(mapa);
-            const posicionesIniciales = [posicionInicial];
+            const posicionesIniciales = [{
+            nombre: creador,           
+            fila: posicionInicial.fila,
+            columna: posicionInicial.columna
+            }];
 
-            console.log('Posición inicial encontrada:', posicionInicial);
+
+            console.log('Posiciones iniciales generadas:', posicionesIniciales);
             const nuevaPartida = { // Este de aqui seria con lo de la clase.
                 id: codigo,
                 creador: socket.id,
@@ -74,7 +79,11 @@ module.exports = function(io) {
                 vueltas,
                 cantJugadores,
                 posicionesIniciales,
-                jugadores: [{ idSocket: socket.id, nombre: creador }], // Tambien seria con lo de la clase.
+                jugadores: [{
+                idSocket: socket.id,
+                nombre: creador,
+                posicion: posicionesIniciales[0]  // <--- asigná posición inicial acá
+                }], // Tambien seria con lo de la clase.
 
                 // Este de aqui es para que se cierre despues de el tiempo de espera.
                 estado: 'esperando',
@@ -125,16 +134,41 @@ module.exports = function(io) {
             if (partida.jugadores.length >= partida.cantJugadores) { // Se alanzo la cantidad maxima de participantes.
                 return socket.emit('errorSala', { mensaje: 'La sala esta llena' });
             }
+            const indiceJugador = partida.jugadores.length;
+            const posicionInicial = buscarPosicionE(leerCSV(partida.pista)); 
 
-            partida.jugadores.push({ idSocket: socket.id, nickname: nombreUsuario });// Registrar el jugador en la partidad
+            const nuevaPosicion = {
+            fila: posicionInicial.fila,
+            columna: posicionInicial.columna + indiceJugador
+            };
+
+            partida.jugadores.push({ 
+            idSocket: socket.id, 
+            nickname: nombreUsuario,
+            posicion: nuevaPosicion
+            });
+
+            partida.posicionesIniciales = partida.jugadores.map(j => ({
+            nombre: j.nombre || j.nickname,  
+            fila: j.posicion.fila,
+            columna: j.posicion.columna
+            }));
+
+            // Registrar el jugador en la partidad
             // Tambien a esa partida se le asociaria el usuario.
             socket.join(idSala);
             socket.data.idSala = idSala; // Guardar el id de la sala.
-            
+            if (!partida.contenidoMapa) {
+                const contenidoMapa = leerCSV(partida.pista);
+                partida.contenidoMapa = contenidoMapa;
+            }
             // Aqui se emitiria un mensaje para lo demas de la sala.
-            io.to(idSala).emit('jugadorNuevo', {
-                jugadores: partida.jugadores,
-                cantJugadores: partida.cantJugadores
+            socket.emit('jugadorNuevo', {
+            jugadores: partida.jugadores,
+            cantJugadores: partida.cantJugadores,
+            mapaSeleccionado: partida.pista,
+            contenidoMapa: partida.contenidoMapa,
+            posicionesIniciales: partida.posicionesIniciales
             });
 
 

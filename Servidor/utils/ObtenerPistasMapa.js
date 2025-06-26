@@ -5,7 +5,7 @@ let rutaArchivoEdu = "C:\\Users\\edurg\\OneDrive\\Escritorio\\Proyecto 4\\Luiki-
 
 
 //Esta va a ser la ruta que consuma según se haya puesto
-const carpetaMapas = rutaArchivoEdu;
+const carpetaMapas = rutaArchivoBryan;
 
 // Función que retorna un array con los nombres de archivos
 function obtencionMapas() {

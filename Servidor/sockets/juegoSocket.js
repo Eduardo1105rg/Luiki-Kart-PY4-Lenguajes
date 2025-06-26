@@ -60,11 +60,12 @@ module.exports = function(io) {
             // Generar el codigo.
             let codigo = GenerarCodigoSala(); 
             
-              const mapa = leerCSV(pista);
-              const posicionInicial = buscarPosicionE(mapa);
-              const posicionesIniciales = [posicionInicial];
+            // Obtener el mapa.
+            const mapa = leerCSV(pista);
+            const posicionInicial = buscarPosicionE(mapa);
+            const posicionesIniciales = [posicionInicial];
 
-  console.log('Posición inicial encontrada:', posicionInicial);
+            console.log('Posición inicial encontrada:', posicionInicial);
             const nuevaPartida = { // Este de aqui seria con lo de la clase.
                 id: codigo,
                 creador: socket.id,
@@ -128,7 +129,8 @@ module.exports = function(io) {
             partida.jugadores.push({ idSocket: socket.id, nickname: nombreUsuario });// Registrar el jugador en la partidad
             // Tambien a esa partida se le asociaria el usuario.
             socket.join(idSala);
-            socket.data.idSala = idSala; // guardamos el id de lap artida
+            socket.data.idSala = idSala; // Guardar el id de la sala.
+            
             // Aqui se emitiria un mensaje para lo demas de la sala.
             io.to(idSala).emit('jugadorNuevo', {
                 jugadores: partida.jugadores,
@@ -140,7 +142,6 @@ module.exports = function(io) {
             if (partida.jugadores.length === partida.cantJugadores) {
                 io.to(idSala).emit('salaListaParaIniciar', { sala: idSala });
             }
-
 
         });
 

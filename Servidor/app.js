@@ -39,7 +39,7 @@ juegoSocket(io);
 
 const { GenerarCodigoSala } = require('./utils/GenerarCodigoSala');
 
-GenerarCodigoSala();
+//GenerarCodigoSala();
 
 
 // Importar los rutas.

@@ -598,22 +598,27 @@ socket.on('actualizarEstadoJuego', ({ jugadorId, nuevaPosicion }) => {
                 v-for="(celda, j) in fila"
                 :key="j"
                 :class="{ muro: celda === '#' }"
-                style="position: relative; width: 30px; height: 30px; padding: 0;"
+                style="position: relative; width: 50px; height: 50px; padding: 0;"
               >
                 <template v-if="posicionesCarros.some(p => p.fila === i && p.columna === j)">
                   <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;">
-                    <span 
+                    <div 
                       v-for="(p, index) in posicionesCarros.filter(p => p.fila === i && p.columna === j)" 
-                      :key="index"
+                      :key="p.idJugador"
                       :style="{
                         position: 'absolute',
-                        left: `${index * 8}px`,
+                        left: `${index * 30}px`,
                         zIndex: index,
-                        fontSize: '20px'
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center'
                       }"
                     >
-                      {{ getCarroEmojiPorIndice(index) }}
-                    </span>
+                      <span style="font-size: 20px">{{ getCarroEmojiPorIndice(index) }}</span>
+                      <span class="nombre-jugador">
+                        {{ p.nombre }}
+                      </span>
+                    </div>
                   </div>
                 </template>
                 <span v-else-if="celda !== '#'">
@@ -754,7 +759,7 @@ th, td {
 
 th {
   background-color: #42b983;
-  color: white;
+  color: rgb(246, 171, 171);
   padding: 10px;
   font-weight: 500;
 }
@@ -832,7 +837,20 @@ th {
   flex-direction: column;
   align-items: center;
 }
+.nombre-jugador {
+  font-size: 10px;
+  background: rgb(177, 14, 14);
+  padding: 1px 3px;
+  border-radius: 3px;
+  margin-top: 2px;
+  max-width: 40px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-
+td {
+  overflow: visible;
+  white-space: nowrap;
+}
 </style>
 

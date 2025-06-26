@@ -6,7 +6,7 @@ import { io } from 'socket.io-client';
 import RegistroPartida from './components/CrearPartidadComponent.vue'; // Componente para el ingreso de los datos de la partida.
 
 
-const rutaApi = 'http://localhost:3000'
+const rutaApi = 'https://fg54v9hj-3000.use2.devtunnels.ms';//'http://localhost:3000'
 
 const socket = io(rutaApi);
 const mapas = ref([]);
@@ -19,7 +19,7 @@ const nombreJugador = ref('');
 const vueltas = ref(null)
 const tipoJuego = ref(null);
 const cantidadJugadores = ref(null);
-const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionado
+const mapaContenido = ref([])  // Aqui guardamos la matriz del mapa seleccionado
 const posicionesCarros = ref([]);
 const datosPartida = ref(null); // Este seria para el registro de los datos a la hora de crear una partidad.
 const esCreadorPartida = ref(false);

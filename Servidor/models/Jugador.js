@@ -9,7 +9,7 @@ class Jugador {
         this.nombre = nombre;
         this.vehiculo = vehiculo
         this.tiempo = 0;
-        this.posicion = 0;
+        this.posicion = { fila: null, columna: null };
     }
 
     /**

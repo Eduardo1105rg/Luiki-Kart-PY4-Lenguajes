@@ -1,11 +1,19 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import Swal from 'sweetalert2'
+import { io } from 'socket.io-client';
 
+
+const socket = io('http://localhost:3000');
 const mapas = ref([])
 const crearPartidaActivo = ref(false)
 const mapaSeleccionado = ref(null)
+const nombreJugador = ref('');
+const vueltas = ref(null)
+const tipoJuego = ref(null);
+const cantidadJugadores = ref(null);
 const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionado
+const posicionesCarros = ref([]);
 
 async function obtenerMapa() {
   try {
@@ -19,13 +27,81 @@ async function obtenerMapa() {
   }
 }
 
-onMounted(() => {
-  obtenerMapa()
-})
+onMounted(async () => {
+  await obtenerMapa();
 
-function activarCrearPartida() {
-  crearPartidaActivo.value = true
+  const nombre = await pedirNombreJugador();
+  if (!nombre) return;
+
+  nombreJugador.value = nombre;
+
+  const tipo = await pedirTipoJuego();
+  if (!tipo) return;
+  tipoJuego.value = tipo;
+
+
+  const maxJugadores = await pedirCantidadJugadores();
+  if (!maxJugadores) return;
+  cantidadJugadores.value = maxJugadores;
+});
+
+
+async function activarCrearPartida() {
+  const { value: cantidad } = await Swal.fire({
+    title: '¿Cuántas vueltas querés jugar?',
+    input: 'number',
+    inputLabel: 'Cantidad de vueltas',
+    inputPlaceholder: 'Ej. 3',
+    inputAttributes: {
+      min: 1,
+      max: 10,
+      step: 1
+    },
+    showCancelButton: true,
+    inputValidator: (value) => {
+      if (!value || isNaN(value) || value <= 0) {
+        return 'Ingresá un número válido de vueltas';
+      }
+    }
+  });
+
+  if (cantidad) {
+    vueltas.value = parseInt(cantidad);
+    crearPartidaActivo.value = true;
+    console.log('Vueltas seleccionadas:', vueltas.value);
+    
+  }
+
+
 }
+
+
+async function pedirTipoJuego() {
+  const { value: tipo } = await Swal.fire({
+    title: 'Seleccioná el tipo de juego',
+    input: 'select',
+    inputOptions: {
+      'carrera': 'Carrera',
+      'rally': 'Rally',
+      'circuito': 'Circuito'
+    },
+    inputPlaceholder: 'Elegí un tipo de juego',
+    showCancelButton: true,
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Debés seleccionar un tipo de juego';
+      }
+    }
+  });
+
+  if (tipo) {
+    return tipo;
+  } else {
+    return null;
+  }
+}
+
+
 
 function volver() {
   crearPartidaActivo.value = false
@@ -51,7 +127,8 @@ function confirmarSeleccion(mapa) {
         icon: 'success',
         confirmButtonColor: '#42b983'
       })
-      pedirMapaSeleccionado(mapa)
+      pedirMapaSeleccionado(mapa);
+      crearPartida();
     }
   })
 }
@@ -71,20 +148,100 @@ async function pedirMapaSeleccionado(mapa) {
   }
 }
 
+async function pedirNombreJugador() {
+  const { value: nombre } = await Swal.fire({
+    title: 'Ingresa tu nombre',
+    input: 'text',
+    inputLabel: 'Nombre del jugador',
+    inputPlaceholder: 'Por ejemplo: Bryan',
+    showCancelButton: true,
+    inputValidator: (value) => {
+      if (!value) {
+        return 'Debes escribir tu nombre';
+      }
+    }
+  });
+
+  if (nombre) {
+    return nombre;
+  } else {
+    return null;
+  }
+}
+
+async function pedirCantidadJugadores() {
+  const { value: cantidad } = await Swal.fire({
+    title: '¿Cuántos jugadores máximo querés para la partida?',
+    input: 'number',
+    inputLabel: 'Cantidad de jugadores',
+    inputPlaceholder: 'Ej. 4',
+    inputAttributes: {
+      min: 1,
+      max: 20,
+      step: 1
+    },
+    showCancelButton: true,
+    inputValidator: (value) => {
+      if (!value || isNaN(value) || value <= 0) {
+        return 'Ingresá un número válido de jugadores';
+      }
+    }
+  });
+
+  if (cantidad) {
+    return parseInt(cantidad);
+  } else {
+    return null;
+  }
+}
+
+
+
+function crearPartida() {
+  if (!mapaSeleccionado.value || !vueltas.value || !tipoJuego.value || !cantidadJugadores.value) {
+    Swal.fire('Error', 'Debés seleccionar mapa, tipo de juego, cantidad de vueltas y cantidad de jugadores.', 'error');
+    return;
+  }
+
+  socket.emit('crearPartida', {
+    creador: nombreJugador.value,
+    tipoJuego: tipoJuego.value,
+    vueltas: vueltas.value,
+    pista: mapaSeleccionado.value,
+    cantJugadores: cantidadJugadores.value
+  });
+}
+
+
+
+socket.on('partidaGenerada', (data) => {
+  console.log('Partida generada:', data);
+  console.log('Posiciones iniciales recibidas:', data.posicionesIniciales);
+
+  posicionesCarros.value = data.posicionesIniciales || [];  
+  Swal.fire('Partida generada', `ID: ${data.id}`, 'success');
+});
+
+
 </script>
 
 <template>
   <div class="contenedor">
     <h1>Luiki Kart</h1>
 
-    <div v-if="!crearPartidaActivo" class="botones">
+    <!-- Mostrar mensaje mientras no hay nombre -->
+    <div v-if="!nombreJugador">
+      <p>Esperando nombre del jugador...</p>
+    </div>
+
+    <!-- Mostrar botones si ya hay nombre y aún no se activa crear partida -->
+    <div v-else-if="!crearPartidaActivo" class="botones">
       <button class="boton" @click="activarCrearPartida">Crear partida</button>
       <button class="boton">Unirse a una partida (jugar)</button>
       <button class="boton">Ver Ranking</button>
     </div>
 
     <div v-else>
-      <!-- Esto solo sucede si el mapa ya se cargo jsjsjs -->
       <div v-if="mapaContenido.length > 0">
         <table>
           <tbody>
@@ -92,17 +249,25 @@ async function pedirMapaSeleccionado(mapa) {
               <td
                 v-for="(celda, j) in fila"
                 :key="j"
-                :class="{ muro: celda === '#' }"
+                :class="{
+                  muro: celda === '#',
+                  carro: posicionesCarros.some(p => p.fila === i && p.columna === j)
+                }"
               >
-                <span v-if="celda !== '#'">{{ celda }}</span>
+                <span v-if="posicionesCarros.some(p => p.fila === i && p.columna === j)">
+                  🚗
+                </span>
+                <span v-else-if="celda !== '#'">
+                  {{ celda }}
+                </span>
               </td>
+
             </tr>
           </tbody>
         </table>
         <button class="boton" @click="volver">Volver</button>
       </div>
 
-      <!-- Esto es como la parte anterior donde uno selecciona la cual se muestra sino hay mapas ni nada -->
       <div v-else>
         <table class="table stripped bordered">
           <thead>
@@ -121,6 +286,7 @@ async function pedirMapaSeleccionado(mapa) {
     </div>
   </div>
 </template>
+
 
 <style scoped>
 .contenedor {
@@ -179,6 +345,16 @@ th {
   background-color: #37368e; /* color del muro awiwiw */
   width: 20px;
   height: 20px;
+}
+.carro {
+  background-color: red;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
 }
 
 </style>

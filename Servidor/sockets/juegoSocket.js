@@ -34,8 +34,10 @@
 
 // Definir lo que seria el socket para el juego en si.
 const { GenerarCodigoSala } = require('../utils/GenerarCodigoSala'); // Para generar los codigos de las salas.
+const { Sala, Jugador } = require('../models/Jugador');
 const partidasActivas = new Map(); // Las partidas que hay actualmente, podemos cambiarlo por una clase despues.
-
+const { leerCSV } = require('../utils/LeerCSV');
+const { buscarPosicionE } = require('../utils/PosicionInicial');
 
 module.exports = function(io) {
 
@@ -50,7 +52,7 @@ module.exports = function(io) {
         // Con socket.emit('', na); Es para enviar datos.
 
         // Crear la sala.
-        socket.on('crearPartidad', (datos) => {
+        socket.on('crearPartida', (datos) => {
 
             // Obtener los datos.
             const { creador, tipoJuego, pista, vueltas, cantJugadores } = datos;
@@ -58,6 +60,11 @@ module.exports = function(io) {
             // Generar el codigo.
             let codigo = GenerarCodigoSala(); 
             
+              const mapa = leerCSV(pista);
+              const posicionInicial = buscarPosicionE(mapa);
+              const posicionesIniciales = [posicionInicial];
+
+  console.log('Posición inicial encontrada:', posicionInicial);
             const nuevaPartida = { // Este de aqui seria con lo de la clase.
                 id: codigo,
                 creador: socket.id,
@@ -65,7 +72,8 @@ module.exports = function(io) {
                 tipoJuego,
                 vueltas,
                 cantJugadores,
-                jugadores: [{ idSocket: socket.id, creador }], // Tambien seria con lo de la clase.
+                posicionesIniciales,
+                jugadores: [{ idSocket: socket.id, nombre: creador }], // Tambien seria con lo de la clase.
 
                 // Este de aqui es para que se cierre despues de el tiempo de espera.
                 estado: 'esperando',
@@ -79,7 +87,8 @@ module.exports = function(io) {
             // Unirse a la sala.
             socket.join(codigo);
 
-
+            //para guardar el id de la sala
+            socket.data.idSala = codigo;
             // Devolver los datos que se generaron.
             socket.emit('partidaGenerada', nuevaPartida);
 
@@ -119,7 +128,7 @@ module.exports = function(io) {
             partida.jugadores.push({ idSocket: socket.id, nickname: nombreUsuario });// Registrar el jugador en la partidad
             // Tambien a esa partida se le asociaria el usuario.
             socket.join(idSala);
-
+            socket.data.idSala = idSala; // guardamos el id de lap artida
             // Aqui se emitiria un mensaje para lo demas de la sala.
             io.to(idSala).emit('jugadorNuevo', {
                 jugadores: partida.jugadores,
@@ -201,10 +210,11 @@ module.exports = function(io) {
             console.log(`Se ha desconectado el jugador: ${socket.id}`);
             // Se podria agregar algo por si se quiere un procesamiento adicional.
 
+            const idSala = socket.data.idSala;
+            if (!idSala) return;
+
             const partida = partidasActivas.get(idSala);
-            if (!partida) {
-                return;
-            }
+            if (!partida) return;
 
             partida.estado = 'finalizada';
 
@@ -218,7 +228,7 @@ module.exports = function(io) {
 
             // Limpiar sala
             partidasActivas.delete(idSala);
-            io.socketsLeave(idSala);
+            io.in(idSala).socketsLeave(idSala);
 
         });
 

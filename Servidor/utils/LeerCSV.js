@@ -11,7 +11,7 @@ function leerCSV(nombreArchivo) {
         // Construir la ruta del archivo.
         let rutaArchivoEdu = "C:\\Users\\edurg\\OneDrive\\Escritorio\\Proyecto 4\\Luiki-Kart-PY4-Lenguajes\\Servidor\\mapas\\" + nombreArchivo;
         let rutaArchivoBryan = "C:\\Users\\bryan\\Desktop\\Luiki-Kart-PY4-Lenguajes\\Servidor\\mapas\\" + nombreArchivo;
-        let contenido = fs.readFileSync(rutaArchivoEdu, 'utf-8'); // Leer el contenido del archivo.
+        let contenido = fs.readFileSync(rutaArchivoBryan, 'utf-8'); // Leer el contenido del archivo.
         //console.log("Contenido: ", contenido)
 
         // contenido = contenido.trim("[","]");

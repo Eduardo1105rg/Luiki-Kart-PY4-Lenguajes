@@ -241,7 +241,7 @@ module.exports = function(io) {
                 columna: j.posicion.columna
             }));
 
-            console.log("Se va a emitir los datos.")
+            //console.log("Se va a emitir los datos.")
             // Esto es basico, se deberia de volver a pasar la matriz actual o algo para modificarla.
             io.to(idSala).emit('actualizarEstadoJuego', {
                 jugadorId: socket.id,

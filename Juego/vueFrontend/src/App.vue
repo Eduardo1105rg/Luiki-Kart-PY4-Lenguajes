@@ -23,7 +23,16 @@ const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionad
 const posicionesCarros = ref([]);
 const datosPartida = ref(null); // Este seria para el registro de los datos a la hora de crear una partidad.
 
-let nada = `${rutaApi}/api/mapa/mapas`; //'http://localhost:3000/api/mapa/mapas'
+
+const idSalaActual = ref(null); // Registrar el codigo de la sala.
+
+const esCreador = ref(false); // Para registrar el creador de la sala.
+
+const estadoPartida = ref('esperando') // Estado acual de la sala.
+
+
+
+//let nada = `${rutaApi}/api/mapa/mapas`; //'http://localhost:3000/api/mapa/mapas'
 async function obtenerMapa() {
   try {
     const response = await fetch(`${rutaApi}/api/mapa/mapas`)
@@ -341,6 +350,9 @@ function crearPartida() {
     pista: mapaSeleccionado.value,
     cantJugadores: cantidadJugadores.value
   });
+
+  esCreador.value = true;
+
 }
 
 
@@ -351,6 +363,11 @@ socket.on('partidaGenerada', (data) => {
 
   posicionesCarros.value = data.posicionesIniciales || [];  
   Swal.fire('Partida generada', `ID: ${data.id}`, 'success');
+
+  // Registrar los datos de la sala.
+  idSalaActual.value = data.id; // Si no estoy mal este tambien esta registrada en el socket actual.
+  estadoPartida.value = data.estado;
+
 });
 
 // Para escuchar cuando el tiempo de espera llegue a cero.
@@ -415,6 +432,46 @@ socket.on('salaListaParaIniciar', ({ sala }) => {
 });
 
 
+// Escuchar la parte del incio del juego.
+socket.on('juegoIniciado', ({ cuentaRegresiva }) => {
+  console.log('¡Iniciando el juego! Cuenta regresiva:', cuentaRegresiva);
+
+  let tiempo = cuentaRegresiva;
+
+  const cuentaRegresivaIntervalo = setInterval(() => {
+    if (tiempo > 0) {
+      Swal.fire({
+        title: `Comienza en ${tiempo}...`,
+        timer: 1000,
+        showConfirmButton: false,
+        allowOutsideClick: false
+      });
+      tiempo--;
+    } else {
+      clearInterval(cuentaRegresivaIntervalo);
+
+      Swal.fire({
+        title: '¡A jugar!',
+        icon: 'success',
+        timer: 1000,
+        showConfirmButton: false
+      });
+
+      estadoPartida.value = 'jugando';
+      //Aqui va la parte de la habilitacion de los controles del juego o como lo vayamos a manejar.
+    }
+  }, 1000);
+});
+
+
+// funcion para enviar la solicitud de inicio de juego.
+function emitirInicioDeJuego() {
+  socket.emit('iniciarJuego', {
+    idSala: idSalaActual.value 
+  });
+}
+
+
 
 </script>
 
@@ -465,6 +522,11 @@ socket.on('salaListaParaIniciar', ({ sala }) => {
             </tr>
           </tbody>
         </table>
+
+        
+        <!-- v-if="esCreador" -->
+        <button @click="emitirInicioDeJuego" class="boton"> Iniciar partida </button>
+
         <button class="boton" @click="volver">Volver</button>
       </div>
 

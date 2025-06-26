@@ -167,12 +167,11 @@ module.exports = function(io) {
 
             // Emitir un mensaje a todos los de la sala.
 
-
         });
 
         // Moverse.
         socket.on('realizarMovimiento', (datos) => {
-            const { idSala, demasDatos } = datos;
+            const { idSala, fila, columna } = datos;
 
             // Revisar los datos que llegaron
             const partida = partidasActivas.get(idSala);
@@ -207,14 +206,6 @@ module.exports = function(io) {
 
             // Cierre de la sala y sacar a los jugadores de esta.
 
-        });
-
-
-        // Salir de la partida.
-        socket.on('disconnect', () => {
-            console.log(`Se ha desconectado el jugador: ${socket.id}`);
-            // Se podria agregar algo por si se quiere un procesamiento adicional.
-
             const idSala = socket.data.idSala;
             if (!idSala) return;
 
@@ -235,6 +226,17 @@ module.exports = function(io) {
             partidasActivas.delete(idSala);
             io.in(idSala).socketsLeave(idSala);
 
+
+
+        });
+
+
+        // Salir de la partida.
+        socket.on('disconnect', () => {
+            console.log(`Se ha desconectado el jugador: ${socket.id}`);
+            // Se podria agregar algo por si se quiere un procesamiento adicional.
+
+            
         });
 
     }); 

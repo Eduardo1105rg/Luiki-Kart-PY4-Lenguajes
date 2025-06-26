@@ -6,9 +6,10 @@ import { io } from 'socket.io-client';
 import RegistroPartida from './components/CrearPartidadComponent.vue'; // Componente para el ingreso de los datos de la partida.
 
 
+const rutaApi = 'http://localhost:3000'
 
-const socket = io('http://localhost:3000');
-const mapas = ref([])
+const socket = io(rutaApi);
+const mapas = ref([]);
 const crearPartidaActivo = ref(false);
 
 const mostrarFormulario = ref(false);
@@ -22,10 +23,10 @@ const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionad
 const posicionesCarros = ref([]);
 const datosPartida = ref(null); // Este seria para el registro de los datos a la hora de crear una partidad.
 
-
+let nada = `${rutaApi}/api/mapa/mapas`; //'http://localhost:3000/api/mapa/mapas'
 async function obtenerMapa() {
   try {
-    const response = await fetch('http://localhost:3000/api/mapa/mapas')
+    const response = await fetch(`${rutaApi}/api/mapa/mapas`)
     if (!response.ok) throw new Error('Error al obtener el mapa')
     const data = await response.json()
     mapas.value = data
@@ -114,7 +115,16 @@ async function pedirTipoJuego() {
 }
 
 
-
+/**
+ * Nombre:
+ * 
+ * Descripcion:
+ * 
+ * Entradas:
+ * 
+ * Salidas:
+ * 
+ */
 function volver() {
   crearPartidaActivo.value = false;
   //ingresoDatos.value = true;
@@ -167,9 +177,9 @@ function confirmarSeleccion(mapa) {
  * Salidas:
  * 
  */
-async function pedirMapaSeleccionado(mapa) {
+async function pedirMapaSeleccionado(mapa) { //'http://localhost:3000/api/mapa/especifico'
   try {
-    const response = await fetch('http://localhost:3000/api/mapa/especifico', {
+    const response = await fetch(`${rutaApi}/api/mapa/especifico`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nombreMapa: mapa }) // clave 'nombreMapa' para que coincida con el backend
@@ -360,16 +370,26 @@ socket.on('juegoCancelado', ({ motivo }) => {
 });
 
 
-// Resultado de unirse a una sala.
-socket.on('jugadorNuevo', (datos) => {
-  console.log('Nuevo jugador en la sala:', datos);
+// Esta seria para avisar al jugador que se acaba de unir que ingresa a la sala de espera y se le renderiza el mapa.
+socket.on('ingresoSala', (datos) => {
 
   Swal.fire({
     icon: 'info',
-    title: 'Te uniste a la partida',
-    text: `Ingresando a la sala de espera hasta que se inicie la partida...`
+    title: 'Nuevo jugador',
+    text: `Ingresando se ha unido un nuevo jugador a la sala....`
   });
 
+});
+
+// Esto es para avisar que un nuevo jugador se unio a la sala en que esta estan esperando para 
+socket.on('jugadorNuevo', (datos) => {
+  console.log('Ingreso a la sala:', datos);
+
+  Swal.fire({
+    icon: 'info',
+    title: 'Nuevo jugador',
+    text: `Nuevo jugador ingresando a la sala de espera.`
+  });
   // Aqui se podria hacer algo mas para mostrar la sala de espera. 
   // Tambien podriamos mostrar el mapa pero no dejar que se muevan hasta que el estado de sea igual a Iniciado
 });
@@ -389,7 +409,7 @@ socket.on('salaListaParaIniciar', ({ sala }) => {
     icon: 'success',
     title: 'La sala esta llena',
     text: `La partida ${sala} esta lista para comenzar...`
-  });
+  }); 
 
   // Aqui se podria poner algo como el boton de inciar o algo asi.
 });

@@ -21,7 +21,7 @@ function GenerarCodigoSala () {
     do {
         // Opcion 2: Este lo que hace que se generen valores aletorios y los pasa a formato string. https://programmerclick.com/article/18331689836/
         codigo = Math.random().toString(36).slice(2);
-        console.log(codigo,"\n");
+        //console.log(codigo,"\n");
 
     } while (codigosGenerados.has(codigo))
 

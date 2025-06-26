@@ -130,11 +130,15 @@ module.exports = function(io) {
             // Tambien a esa partida se le asociaria el usuario.
             socket.join(idSala);
             socket.data.idSala = idSala; // Guardar el id de la sala.
-            
+
+            // Indicarle al jugador que se queria unir, el hecho de que si se pudo unir.
+            // socket.emit('ingresoSala', { mensaje: "Te has unido a la sala." });
+
             // Aqui se emitiria un mensaje para lo demas de la sala.
             io.to(idSala).emit('jugadorNuevo', {
                 jugadores: partida.jugadores,
-                cantJugadores: partida.cantJugadores
+                cantJugadores: partida.cantJugadores,
+                nuevoJugador: { idSocket: socket.id, nickname: nombreUsuario }
             });
 
 

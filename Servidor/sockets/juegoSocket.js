@@ -211,16 +211,23 @@ module.exports = function(io) {
 
             // Revisar los datos que llegaron
             const partida = partidasActivas.get(idSala);
-            if (!partida) return;
+            if (!partida) {
+                console.log("Error 1")
+                return;
+            }
 
             // Usamos el id para buscar el jugador para no tener que pasar el nombre cada vez.
             const jugador = partida.jugadores.find(j => j.idSocket === socket.id);
-            if (!jugador) return;
+            if (!jugador) {
+                console.log("Error 2")
+                return;
+            }
 
             // Aqui va todo lo relacionado con el movimiento 
             const mapa = partida.mapa;
             // Recibe las posicion que ingreso el usuario, verifica que pueda moverser, si se puede mover actualiza, vuleve a pasar la matriz a todos los jugadores.
             if ( fila < 0 || fila >= mapa.length || columna < 0 || columna >= mapa[0].length || mapa[fila][columna] === '#' ) {
+                console.log("Error 3")
                 return;
             }
             // al jugador que fue el que hizo el movimiento se le manda la matriz y dejar preprado para una posible parte de enviar un mensaje.
@@ -234,7 +241,7 @@ module.exports = function(io) {
                 columna: j.posicion.columna
             }));
 
-
+            console.log("Se va a emitir los datos.")
             // Esto es basico, se deberia de volver a pasar la matriz actual o algo para modificarla.
             io.to(idSala).emit('actualizarEstadoJuego', {
                 jugadorId: socket.id,

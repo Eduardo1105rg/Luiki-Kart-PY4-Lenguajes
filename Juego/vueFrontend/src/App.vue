@@ -324,6 +324,7 @@ if (!idSala) {
     idSala,
     nombreUsuario: nombreJugador.value
   });
+  idSalaActual.value = idSala;
 
   // Esperar el resultado de la union.
 
@@ -499,7 +500,7 @@ function emitirInicioDeJuego() {
 //Para lo que seria la parte de moverse.
 function mover(direccion) {
 
-  console.log("Datos del movimeinto: ", "   --  ", estadoPartida.value);
+  console.log("Datos del movimeinto: ", posicionesCarros.value,"   --  ", socket.id);
 
   if ( estadoPartida.value != 'jugando') {
     return;

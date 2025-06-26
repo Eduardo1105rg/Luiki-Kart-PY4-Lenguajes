@@ -5,7 +5,7 @@ let rutaArchivoEdu = "C:\\Users\\edurg\\OneDrive\\Escritorio\\Proyecto 4\\Luiki-
 
 
 //Esta va a ser la ruta que consuma según se haya puesto
-const carpetaMapas = rutaArchivoBryan;
+const carpetaMapas = rutaArchivoEdu;
 
 // Función que retorna un array con los nombres de archivos
 function obtencionMapas() {
@@ -20,4 +20,6 @@ function obtencionMapas() {
 }
 
 
-module.exports = { obtencionMapas };
+module.exports = { 
+  obtencionMapas 
+};

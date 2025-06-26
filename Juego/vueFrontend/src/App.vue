@@ -9,7 +9,7 @@ const mapaContenido = ref([])  // Aquí guardamos la matriz del mapa seleccionad
 
 async function obtenerMapa() {
   try {
-    const response = await fetch('http://localhost:3000/api/mapas')
+    const response = await fetch('http://localhost:3000/api/mapa/mapas')
     if (!response.ok) throw new Error('Error al obtener el mapa')
     const data = await response.json()
     mapas.value = data

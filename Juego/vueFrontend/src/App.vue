@@ -224,7 +224,7 @@ async function pedirNombreJugador() {
       }
     }
   });
-
+  mostrarFormulario.value = false;
   if (nombre) {
     return nombre;
   } else {
@@ -373,7 +373,7 @@ socket.on('partidaGenerada', (data) => {
   // Registrar los datos de la sala.
   idSalaActual.value = data.id; // Si no estoy mal este tambien esta registrada en el socket actual.
   estadoPartida.value = data.estado;
-
+  console.log("Estado juego: ",estadoPartida.value )
 });
 
 // Para escuchar cuando el tiempo de espera llegue a cero.
@@ -393,22 +393,23 @@ socket.on('juegoCancelado', ({ motivo }) => {
 });
 
 
-socket.on('jugadorNuevo', (datos) => {
-  console.log('Nuevo jugador en la sala:', datos);
+// socket.on('jugadorNuevo', (datos) => {
+//   console.log('Nuevo jugador en la sala:', datos);
 
-  mapaSeleccionado.value = datos.mapaSeleccionado;
-  mapaContenido.value = datos.contenidoMapa;
-  posicionesCarros.value = datos.posicionesIniciales || [];
-  crearPartidaActivo.value = true;
-  mostrarFormulario.value = false;  
-  esCreadorPartida.value = false;
-  Swal.fire({
-    icon: 'info',
-    title: 'Nuevo jugador',
-    text: `Ingresando se ha unido un nuevo jugador a la sala....`
-  });
+//   mapaSeleccionado.value = datos.mapaSeleccionado;
+//   mapaContenido.value = datos.contenidoMapa;
+//   posicionesCarros.value = datos.posicionesIniciales || [];
+//   crearPartidaActivo.value = true;
+//   mostrarFormulario.value = false;  
+//   esCreadorPartida.value = false;
 
-});
+//   Swal.fire({
+//     icon: 'info',
+//     title: 'Nuevo jugador',
+//     text: `Se ha unido un nuevo jugador a la sala....`
+//   });
+
+// });
 
 // Esto es para avisar que un nuevo jugador se unio a la sala en que esta estan esperando para 
 socket.on('jugadorNuevo', (datos) => {
@@ -495,6 +496,63 @@ function emitirInicioDeJuego() {
 
 
 
+//Para lo que seria la parte de moverse.
+function mover(direccion) {
+
+  console.log("Datos del movimeinto: ", direccion, "   --  ", estadoPartida.value);
+
+  if ( estadoPartida.value != 'jugando') {
+    return;
+  }
+  const actual = posicionesCarros.value.find(p => p.nombre === nombreJugador.value); // Bryan ya guardo las pos.
+  if (!actual) return;
+
+  let nuevaFila = actual.fila;
+  let nuevaColumna = actual.columna;
+
+  // Procesar la entrada.
+  switch (direccion) {
+    case 'arriba': 
+      nuevaColumna--; 
+      break;
+    case 'abajo': 
+      nuevaColumna++; 
+      break;
+    case 'izquierda': 
+      nuevaFila--; 
+      break;
+    case 'derecha': 
+      nuevaFila++; 
+      break;
+  }
+
+  // Verificar que no se mueva a los limites del mapa.
+  if ( nuevaFila < 0 || nuevaFila >= mapaContenido.value.length || nuevaColumna < 0 || nuevaColumna >= mapaContenido.value[0].length) return;
+
+  // Revisar que el espacio al que se mueva sea valido.
+  if (mapaContenido.value[nuevaFila][nuevaColumna] === '#') return;
+
+  // Comunicarse con el servidor.
+  socket.emit('realizarMovimiento', {
+    idSala: idSalaActual.value,
+    fila: nuevaFila,
+    columna: nuevaColumna
+  });
+}
+
+
+// Que los demas usuarios recibar la asctulizacion.
+socket.on('actualizarEstadoJuego', ({ jugadorId, nuevaPosicion }) => {
+  const index = posicionesCarros.value.findIndex(p => p.idSocket === jugadorId);
+  if (index !== -1) {
+    posicionesCarros.value[index].fila = nuevaPosicion.fila;
+    posicionesCarros.value[index].columna = nuevaPosicion.columna;
+  }
+});
+
+
+
+
 </script>
 
 <template>
@@ -558,6 +616,15 @@ function emitirInicioDeJuego() {
             </tr>
           </tbody>
         </table>
+
+        <div class="controles-movimiento-div">
+          <button @click="mover('arriba')">⬆️</button>
+          <div style="display: flex; justify-content: center; gap: 8px; margin-top: 5px;">
+            <button @click="mover('izquierda')">⬅️</button>
+            <button @click="mover('derecha')">➡️</button>
+          </div>
+          <button @click="mover('abajo')" style="margin-top: 5px;">⬇️</button>
+        </div>
 
         
         <!-- v-if="esCreador" -->
@@ -744,5 +811,17 @@ th {
 .tablero-contenedor {
   animation: aparecer 0.5s ease-out;
 }
+
+
+.controles-movimiento-div {
+  position: absolute;
+  top: 100px;
+  right: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+
 </style>
 

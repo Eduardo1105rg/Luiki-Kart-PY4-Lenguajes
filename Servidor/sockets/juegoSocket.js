@@ -64,10 +64,12 @@ module.exports = function(io) {
             const mapa = leerCSV(pista);
             const posicionInicial = buscarPosicionE(mapa);
             const posicionesIniciales = [{
-            nombre: creador,           
-            fila: posicionInicial.fila,
-            columna: posicionInicial.columna
+                nombre: creador,           
+                fila: posicionInicial.fila,
+                columna: posicionInicial.columna
             }];
+
+            console.log("Mapa actual: ", mapa);
 
 
             console.log('Posiciones iniciales generadas:', posicionesIniciales);
@@ -75,14 +77,15 @@ module.exports = function(io) {
                 id: codigo,
                 creador: socket.id,
                 pista,
+                mapa,
                 tipoJuego,
                 vueltas,
                 cantJugadores,
                 posicionesIniciales,
                 jugadores: [{
-                idSocket: socket.id,
-                nombre: creador,
-                posicion: posicionesIniciales[0]  // <--- asigná posición inicial acá
+                    idSocket: socket.id,
+                    nombre: creador,
+                    posicion: posicionesIniciales[0]  // <--- asignar posición inicial aca
                 }], // Tambien seria con lo de la clase.
 
                 // Este de aqui es para que se cierre despues de el tiempo de espera.
@@ -162,8 +165,9 @@ module.exports = function(io) {
                 const contenidoMapa = leerCSV(partida.pista);
                 partida.contenidoMapa = contenidoMapa;
             }
+
             // Aqui se emitiria un mensaje para lo demas de la sala.
-            socket.emit('jugadorNuevo', {
+            io.to(idSala).emit('jugadorNuevo', {
                 jugadores: partida.jugadores,
                 cantJugadores: partida.cantJugadores,
                 mapaSeleccionado: partida.pista,
@@ -210,17 +214,31 @@ module.exports = function(io) {
             // Usamos el id para buscar el jugador para no tener que pasar el nombre cada vez.
             const jugador = partida.jugadores.find(j => j.idSocket === socket.id);
             if (!jugador) return;
+
             // Aqui va todo lo relacionado con el movimiento 
-
+            const mapa = partida.mapa;
             // Recibe las posicion que ingreso el usuario, verifica que pueda moverser, si se puede mover actualiza, vuleve a pasar la matriz a todos los jugadores.
-
+            if ( fila < 0 || fila >= mapa.length || columna < 0 || columna >= mapa[0].length || mapa[fila][columna] === '#' ) {
+                return;
+            }
             // al jugador que fue el que hizo el movimiento se le manda la matriz y dejar preprado para una posible parte de enviar un mensaje.
-            
+            jugador.posicion = { fila, columna };
+
+            // Reistrar los datos.
+            partida.posicionesIniciales = partida.jugadores.map(j => ({
+                idSocket: j.idSocket,
+                nombre: j.nombre || j.nickname,
+                fila: j.posicion.fila,
+                columna: j.posicion.columna
+            }));
+
+
             // Esto es basico, se deberia de volver a pasar la matriz actual o algo para modificarla.
             io.to(idSala).emit('actualizarEstadoJuego', {
                 jugadorId: socket.id,
                 nuevaPosicion: jugador.posicion 
             });
+
         });
 
 

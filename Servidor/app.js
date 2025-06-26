@@ -27,8 +27,8 @@ app.use(express.json());
 // });
 
 // Importar y configurar sockets [Aqui se llamarian a los archivos que tengan sockets configurados, pero deberia de usarse el routes]
-// const registerSocketHandlers = require('./sockets/juegoSocket');
-// registerSocketHandlers(io);
+const juegoSocket = require('./sockets/juegoSocket');
+juegoSocket(io);
 
 // const { leerCSV } = require('./utils/LeerCSV');
 // const { obtencionMapas } = require('./utils/ObtenerPistasMapa');
@@ -37,6 +37,9 @@ app.use(express.json());
 // const mapas = obtencionMapas();
 // console.log(pista);
 
+const { GenerarCodigoSala } = require('./utils/GenerarCodigoSala');
+
+GenerarCodigoSala();
 
 
 // Importar los rutas.
